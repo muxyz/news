@@ -131,8 +131,14 @@ func writeHtml(head, data []byte) {
 }
 
 func main() {
+	port := "8080"
+
+	if v := os.Getenv("PORT"); len(v) > 0 {
+		port = v
+	}
+
 	go parseFeed()
 
 	http.HandleFunc("/", serveHTTP)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(":"+port, nil)
 }
