@@ -38,6 +38,7 @@ var template = `
   }
   a { color: black; text-decoration: none; }
   #nav { padding: 20px 0; }
+  #news { padding-bottom: 100px; }
   .head { margin-right: 10px }
   hr { margin: 50px 0; }
   </style>
