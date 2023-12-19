@@ -100,8 +100,8 @@ func parseFeed() {
 			}
 
 			val := fmt.Sprintf(`
-<h2><a href="%s">%s</a></h2>
-<h4>%s</h4>
+<h3><a href="%s">%s</a></h2>
+<p>%s</p>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
 		}
