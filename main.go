@@ -30,7 +30,6 @@ var template = `
 <head>
   <style>
   body { 
-	  padding: 25px; 
 	  font-family: arial; 
 	  font-size: 14px; 
 	  color: darkslategray;
