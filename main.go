@@ -16,6 +16,7 @@ var feeds = map[string]string{
 	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
 	"Market": "https://www.ft.com/news-feed?format=rss",
 	"Tech":   "https://techcrunch.com/feed/",
+	"Dev":    "https://news.ycombinator.com/rss",
 }
 
 var replace = []string{
