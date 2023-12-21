@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -11,12 +12,36 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
+var Files string
+
+func init() {
+        user, err := os.UserHomeDir()
+        if err != nil {
+                fmt.Println(err)
+                os.Exit(1)
+        }
+
+        home := filepath.Join(user, "mu")
+        if err := os.MkdirAll(home, 0700); err != nil {
+                fmt.Println(err)
+                os.Exit(1)
+        }
+
+        files := filepath.Join(home, "cache")
+        if err := os.MkdirAll(files, 0700); err != nil {
+                fmt.Println(err)
+                os.Exit(1)
+        }
+        // set bin
+        Files = files
+}
+
 var feeds = map[string]string{
+	"Dev":    "https://news.ycombinator.com/rss",
 	"UK":     "https://feeds.bbci.co.uk/news/rss.xml",
 	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
 	"Market": "https://www.ft.com/news-feed?format=rss",
 	"Tech":   "https://techcrunch.com/feed/",
-	"Dev":    "https://news.ycombinator.com/rss",
 }
 
 var replace = []string{
@@ -58,11 +83,13 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func parseFeed() {
-	f, err := os.Stat("news.html")
+	cache := filepath.Join(Files, "news.html")
+
+	f, err := os.Stat(cache)
 	if err == nil && len(news) == 0 {
 		fmt.Println("Reading file")
 		mutex.Lock()
-		news, _ = os.ReadFile("news.html")
+		news, _ = os.ReadFile(cache)
 		mutex.Unlock()
 		fmt.Println(string(news))
 
@@ -128,7 +155,8 @@ func writeHtml(head, data []byte) {
 	mutex.Lock()
 	news = []byte(html)
 	mutex.Unlock()
-	os.WriteFile("news.html", news, 0644)
+	cache := filepath.Join(Files, "news.html")
+	os.WriteFile(cache, news, 0644)
 }
 
 func main() {
