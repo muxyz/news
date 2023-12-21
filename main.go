@@ -15,25 +15,25 @@ import (
 var Files string
 
 func init() {
-        user, err := os.UserHomeDir()
-        if err != nil {
-                fmt.Println(err)
-                os.Exit(1)
-        }
+	user, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-        home := filepath.Join(user, "mu")
-        if err := os.MkdirAll(home, 0700); err != nil {
-                fmt.Println(err)
-                os.Exit(1)
-        }
+	home := filepath.Join(user, "mu")
+	if err := os.MkdirAll(home, 0700); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 
-        files := filepath.Join(home, "cache")
-        if err := os.MkdirAll(files, 0700); err != nil {
-                fmt.Println(err)
-                os.Exit(1)
-        }
-        // set bin
-        Files = files
+	files := filepath.Join(home, "cache")
+	if err := os.MkdirAll(files, 0700); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+	// set bin
+	Files = files
 }
 
 var feeds = map[string]string{
@@ -58,8 +58,9 @@ var template = `
 	  font-family: arial; 
 	  font-size: 14px; 
 	  color: darkslategray;
-	  width: 1400px;
+	  max-width: 600px;
 	  margin: 0 auto;
+	  padding: 20px;
   }
   a { color: black; text-decoration: none; }
   #nav { padding: 20px 0; }
