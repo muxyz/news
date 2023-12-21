@@ -87,11 +87,10 @@ func parseFeed() {
 
 	f, err := os.Stat(cache)
 	if err == nil && len(news) == 0 {
-		fmt.Println("Reading file")
+		fmt.Println("Reading cache")
 		mutex.Lock()
 		news, _ = os.ReadFile(cache)
 		mutex.Unlock()
-		fmt.Println(string(news))
 
 		if time.Since(f.ModTime()) < time.Minute {
 			time.Sleep(time.Minute)
