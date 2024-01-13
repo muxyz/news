@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -53,6 +54,8 @@ var mutex sync.RWMutex
 var template = `
 <html>
 <head>
+  <title>Mu News</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
   body { 
 	  font-family: arial; 
@@ -103,7 +106,15 @@ func parseFeed() {
 	data := []byte{}
 	head := []byte{}
 
-	for name, feed := range feeds {
+	var sorted []string
+	for name, _ := range feeds {
+		sorted = append(sorted, name)
+	}
+	sort.Strings(sorted)
+
+	for _, name := range sorted {
+		feed := feeds[name]
+
 		f, err := p.ParseURL(feed)
 		if err != nil {
 			fmt.Println(err)
@@ -112,14 +123,11 @@ func parseFeed() {
 
 		head = append(head, []byte(`<a href="#`+name+`" class="head">`+name+`</a>`)...)
 		data = append(data, []byte(`<hr id="`+name+`">`)...)
-		data = append(data, []byte(`<h1>`+name+" - "+f.Title+`</h1>`)...)
-		if f.Title != f.Description {
-			data = append(data, []byte(`<h2>`+f.Description+`</h2>`)...)
-		}
+		data = append(data, []byte(`<h1>`+name+`</h1>`)...)
 
 		for i, item := range f.Items {
 			// only 10 items
-			if i >= 5 {
+			if i >= 10 {
 				break
 			}
 
