@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -46,6 +48,25 @@ var feeds = map[string]string{
 	"Tech":   "https://techcrunch.com/feed/",
 }
 
+var info = map[string]func() string{
+	"Bitcoin": func() string {
+		rsp, err := http.Get("https://blockchain.info/ticker")
+		if err != nil {
+			return ""
+		}
+		b, _ := ioutil.ReadAll(rsp.Body)
+		defer rsp.Body.Close()
+		var res map[string]interface{}
+		json.Unmarshal(b, &res)
+		if res == nil {
+			return ""
+		}
+		p := res["USD"].(map[string]interface{})
+		bitcoin := p["last"].(float64)
+		return fmt.Sprintf("%v", bitcoin)
+	},
+}
+
 var replace = []string{
 	"© 2023 TechCrunch. All rights reserved. For personal use only.",
 }
@@ -67,7 +88,8 @@ var template = `
 	  max-width: 1600px;
   }
   a { color: black; text-decoration: none; }
-  #nav { padding: 20px 0; }
+  #info { margin-top: 5px;}
+  #nav { padding: 10px 0; }
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; width: 50px; border: 5px solid;  }
@@ -83,6 +105,18 @@ var template = `
 </body>
 </html>
 `
+
+func saveHtml(head, data []byte) {
+	if len(data) == 0 {
+		return
+	}
+	html := fmt.Sprintf(template, string(head), string(data))
+	mutex.Lock()
+	news = []byte(html)
+	mutex.Unlock()
+	cache := filepath.Join(Files, "news.html")
+	os.WriteFile(cache, news, 0644)
+}
 
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	mutex.RLock()
@@ -153,27 +187,22 @@ func parseFeed() {
 	}
 
 	head = append([]byte(`<div id="nav" style="position: fixed; top: 0; z-index: 100; background: white; width: 100%;">`), head...)
+
+	// get bitcoin price
+	b := info["Bitcoin"]()
+	head = append(head, []byte(`<div id="info">`)...)
+	head = append(head, []byte(`btc $`+b)...)
+	head = append(head, []byte(`</div>`)...)
+
 	head = append(head, []byte(`</div>`)...)
 
 	data = append([]byte(`<div id="news">`), data...)
 	data = append(data, []byte(`</div>`)...)
 
-	writeHtml(head, data)
+	saveHtml(head, data)
 
 	time.Sleep(time.Minute)
 	parseFeed()
-}
-
-func writeHtml(head, data []byte) {
-	if len(data) == 0 {
-		return
-	}
-	html := fmt.Sprintf(template, string(head), string(data))
-	mutex.Lock()
-	news = []byte(html)
-	mutex.Unlock()
-	cache := filepath.Join(Files, "news.html")
-	os.WriteFile(cache, news, 0644)
 }
 
 func main() {
