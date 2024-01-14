@@ -62,15 +62,19 @@ var template = `
 	  font-family: arial; 
 	  font-size: 14px; 
 	  color: darkslategray;
-	  max-width: 600px;
 	  margin: 0 auto;
 	  padding: 20px;
+	  max-width: 1600px;
   }
   a { color: black; text-decoration: none; }
   #nav { padding: 20px 0; }
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; width: 50px; border: 5px solid;  }
+  .section { display: inline-block; max-width: 600px; margin-right: 20px; vertical-align: top;}
+  @media only screen and (max-width: 600px) {
+    .section { margin-right: 0px; }
+  }
   </style>
 </head>
 <body>
@@ -123,6 +127,8 @@ func parseFeed() {
 		}
 
 		head = append(head, []byte(`<a href="#`+name+`" class="head">`+name+`</a>`)...)
+
+		data = append(data, []byte(`<div class=section>`)...)
 		data = append(data, []byte(`<hr id="`+name+`">`)...)
 		data = append(data, []byte(`<h1>`+name+`</h1>`)...)
 
@@ -142,6 +148,8 @@ func parseFeed() {
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
 		}
+
+		data = append(data, []byte(`</div>`)...)
 	}
 
 	head = append([]byte(`<div id="nav" style="position: fixed; top: 0; z-index: 100; background: white; width: 100%;">`), head...)
