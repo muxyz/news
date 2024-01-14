@@ -38,6 +38,7 @@ func init() {
 }
 
 var feeds = map[string]string{
+	"Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
 	"Dev":    "https://news.ycombinator.com/rss",
 	"UK":     "https://feeds.bbci.co.uk/news/rss.xml",
 	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
@@ -69,7 +70,7 @@ var template = `
   #nav { padding: 20px 0; }
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
-  hr { margin: 50px 0; }
+  hr { margin: 50px 0; width: 50px; border: 5px solid;  }
   </style>
 </head>
 <body>
