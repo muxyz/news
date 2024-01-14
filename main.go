@@ -68,7 +68,7 @@ var template = `
   a { color: black; text-decoration: none; }
   #nav { padding: 20px 0; }
   #news { padding-bottom: 100px; }
-  .head { margin-right: 10px }
+  .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; }
   </style>
 </head>
