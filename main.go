@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,9 @@ import (
 )
 
 var Files string
+
+//go:embed feeds.json
+var f embed.FS
 
 func init() {
 	user, err := os.UserHomeDir()
@@ -39,14 +43,7 @@ func init() {
 	Files = files
 }
 
-var feeds = map[string]string{
-	"Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
-	"Dev":    "https://news.ycombinator.com/rss",
-	"UK":     "https://feeds.bbci.co.uk/news/rss.xml",
-	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
-	"Market": "https://www.ft.com/news-feed?format=rss",
-	"Tech":   "https://techcrunch.com/feed/",
-}
+var feeds = map[string]string{}
 
 var info = map[string]func() string{
 	"Bitcoin": func() string {
@@ -106,6 +103,41 @@ var template = `
 </html>
 `
 
+func addHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		r.ParseForm()
+		name := r.Form.Get("name")
+		feed := r.Form.Get("feed")
+		if len(name) == 0 || len(feed) == 0 {
+			http.Error(w, "missing name or feed", 500)
+			return
+		}
+
+		mutex.Lock()
+		_, ok := feeds[name]
+		if ok {
+			mutex.Unlock()
+			http.Error(w, "feed exists with name " + name, 500)
+			return
+		}
+		// save it
+		feeds[name] = feed
+		mutex.Unlock()
+	}
+
+	form := `
+<form id="add" action="/add" method="post">
+<input id="name" value="name" placeholder="feed name" required>
+<input id="feed" value="feed" placeholder="feed url" required>
+<button>Submit</button>
+</form>
+`
+
+	html := fmt.Sprintf(template, form, "")
+
+	w.Write([]byte(html))
+}
+
 func saveHtml(head, data []byte) {
 	if len(data) == 0 {
 		return
@@ -123,6 +155,17 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	defer mutex.RUnlock()
 
 	w.Write(news)
+}
+
+func loadFeed() {
+	// load the feeds file
+	data, _ := f.ReadFile("feeds.json")
+	// unpack into feeds
+	mutex.Lock()
+	if err := json.Unmarshal(data, &feeds); err != nil {
+		fmt.Println("Error parsing feeds.json", err)
+	}
+	mutex.Unlock()
 }
 
 func parseFeed() {
@@ -212,8 +255,12 @@ func main() {
 		port = v
 	}
 
+	// load the feeds
+	loadFeed()
+
 	go parseFeed()
 
 	http.HandleFunc("/", serveHTTP)
+	http.HandleFunc("/add", addHandler)
 	http.ListenAndServe(":"+port, nil)
 }
