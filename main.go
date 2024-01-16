@@ -1,6 +1,7 @@
 package main
 
 import (
+	"embed"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,6 +17,9 @@ import (
 )
 
 var Files string
+
+//go:embed feeds.json
+var f embed.FS
 
 func init() {
 	user, err := os.UserHomeDir()
@@ -39,15 +43,7 @@ func init() {
 	Files = files
 }
 
-var feeds = map[string]string{
-	"Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
-	"Dev":    "https://news.ycombinator.com/rss",
-	"UK":     "https://feeds.bbci.co.uk/news/rss.xml",
-	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
-	"Market": "https://www.ft.com/news-feed?format=rss",
-	"Tech":   "https://techcrunch.com/feed/",
-	"VC":     "https://sifted.eu/feed/?post_type=article",
-}
+var feeds = map[string]string{}
 
 var info = map[string]func() string{
 	"Bitcoin": func() string {
@@ -109,6 +105,57 @@ var template = `
 </html>
 `
 
+func addHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == "POST" {
+		r.ParseForm()
+		name := r.Form.Get("name")
+		feed := r.Form.Get("feed")
+		if len(name) == 0 || len(feed) == 0 {
+			http.Error(w, "missing name or feed", 500)
+			return
+		}
+
+		mutex.Lock()
+		_, ok := feeds[name]
+		if ok {
+			mutex.Unlock()
+			http.Error(w, "feed exists with name " + name, 500)
+			return
+		}
+
+		// save it
+		feeds[name] = feed
+		mutex.Unlock()
+
+		saveFeed()
+
+		// redirect
+		http.Redirect(w, r, "/", 302)
+	}
+
+	form := `
+<h3>Add Feed</h3>
+<form id="add" action="/add" method="post">
+<input id="name" name="name" placeholder="feed name" required>
+<input id="feed" name="feed" placeholder="feed url" required>
+<button>Submit</button>
+<p><small>Feed will be parsed in 1 minute</small></p>
+</form>
+`
+
+	html := fmt.Sprintf(template, form, "")
+
+	w.Write([]byte(html))
+}
+
+func saveFeed() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	file := filepath.Join(Files, "feeds.json")
+	feed, _ := json.Marshal(feeds)
+	os.WriteFile(file, feed, 0644)
+}
+
 func saveHtml(head, data []byte) {
 	if len(data) == 0 {
 		return
@@ -124,8 +171,41 @@ func saveHtml(head, data []byte) {
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	mutex.RLock()
 	defer mutex.RUnlock()
-
 	w.Write(news)
+}
+
+func loadFeed() {
+	// load the feeds file
+	data, _ := f.ReadFile("feeds.json")
+	// unpack into feeds
+	mutex.Lock()
+	if err := json.Unmarshal(data, &feeds); err != nil {
+		fmt.Println("Error parsing feeds.json", err)
+	}
+	mutex.Unlock()
+
+	// load from cache
+	file := filepath.Join(Files, "feeds.json")
+
+	_, err := os.Stat(file)
+	if err == nil {
+		// file exists
+		b, err := ioutil.ReadFile(file)
+		if err == nil && len(b) > 0 {
+			var res map[string]string
+			json.Unmarshal(b, &res)
+			mutex.Lock()
+			for name, feed := range res {
+				_, ok := feeds[name]
+				if ok {
+					continue
+				}
+				fmt.Println("Loading", name, feed)
+				feeds[name] = feed
+			}
+			mutex.Unlock()
+		}
+	}
 }
 
 func parseFeed() {
@@ -189,6 +269,7 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
+	head = append(head, []byte(`<a href="/add"><button>Add Feed</button></a>`)...)
 	head = append([]byte(`<div id="nav" style="position: fixed; top: 0; z-index: 100; background: white; width: 100%;">`), head...)
 
 	// get bitcoin price
@@ -215,8 +296,12 @@ func main() {
 		port = v
 	}
 
+	// load the feeds
+	loadFeed()
+
 	go parseFeed()
 
 	http.HandleFunc("/", serveHTTP)
+	http.HandleFunc("/add", addHandler)
 	http.ListenAndServe(":"+port, nil)
 }
