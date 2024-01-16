@@ -46,6 +46,7 @@ var feeds = map[string]string{
 	"World":  "https://www.aljazeera.com/xml/rss/all.xml",
 	"Market": "https://www.ft.com/news-feed?format=rss",
 	"Tech":   "https://techcrunch.com/feed/",
+	"VC":     "https://sifted.eu/feed/?post_type=article",
 }
 
 var info = map[string]func() string{
@@ -93,7 +94,9 @@ var template = `
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; width: 50px; border: 5px solid;  }
-  .section { display: inline-block; max-width: 600px; margin-right: 20px; vertical-align: top;}
+  .section { display: block; max-width: 600px; margin-right: 20px; vertical-align: top;}
+  .section img { width: 100%%; height: auto; }
+  .section h3 { margin-bottom: 5px; }
   @media only screen and (max-width: 600px) {
     .section { margin-right: 0px; }
   }
@@ -178,7 +181,7 @@ func parseFeed() {
 
 			val := fmt.Sprintf(`
 <h3><a href="%s">%s</a></h2>
-<p>%s</p>
+<span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
 		}
