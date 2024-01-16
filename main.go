@@ -90,7 +90,9 @@ var template = `
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; width: 50px; border: 5px solid;  }
-  .section { display: inline-block; max-width: 600px; margin-right: 20px; vertical-align: top;}
+  .section { display: block; max-width: 600px; margin-right: 20px; vertical-align: top;}
+  .section img { width: 100%%; height: auto; }
+  .section h3 { margin-bottom: 5px; }
   @media only screen and (max-width: 600px) {
     .section { margin-right: 0px; }
   }
@@ -120,22 +122,38 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "feed exists with name " + name, 500)
 			return
 		}
+
 		// save it
 		feeds[name] = feed
 		mutex.Unlock()
+
+		saveFeed()
+
+		// redirect
+		http.Redirect(w, r, "/", 302)
 	}
 
 	form := `
+<h3>Add Feed</h3>
 <form id="add" action="/add" method="post">
-<input id="name" value="name" placeholder="feed name" required>
-<input id="feed" value="feed" placeholder="feed url" required>
+<input id="name" name="name" placeholder="feed name" required>
+<input id="feed" name="feed" placeholder="feed url" required>
 <button>Submit</button>
+<p><small>Feed will be parsed in 1 minute</small></p>
 </form>
 `
 
 	html := fmt.Sprintf(template, form, "")
 
 	w.Write([]byte(html))
+}
+
+func saveFeed() {
+	mutex.Lock()
+	defer mutex.Unlock()
+	file := filepath.Join(Files, "feeds.json")
+	feed, _ := json.Marshal(feeds)
+	os.WriteFile(file, feed, 0644)
 }
 
 func saveHtml(head, data []byte) {
@@ -153,7 +171,6 @@ func saveHtml(head, data []byte) {
 func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	mutex.RLock()
 	defer mutex.RUnlock()
-
 	w.Write(news)
 }
 
@@ -166,6 +183,29 @@ func loadFeed() {
 		fmt.Println("Error parsing feeds.json", err)
 	}
 	mutex.Unlock()
+
+	// load from cache
+	file := filepath.Join(Files, "feeds.json")
+
+	_, err := os.Stat(file)
+	if err == nil {
+		// file exists
+		b, err := ioutil.ReadFile(file)
+		if err == nil && len(b) > 0 {
+			var res map[string]string
+			json.Unmarshal(b, &res)
+			mutex.Lock()
+			for name, feed := range res {
+				_, ok := feeds[name]
+				if ok {
+					continue
+				}
+				fmt.Println("Loading", name, feed)
+				feeds[name] = feed
+			}
+			mutex.Unlock()
+		}
+	}
 }
 
 func parseFeed() {
@@ -221,7 +261,7 @@ func parseFeed() {
 
 			val := fmt.Sprintf(`
 <h3><a href="%s">%s</a></h2>
-<p>%s</p>
+<span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
 		}
@@ -229,6 +269,7 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
+	head = append(head, []byte(`<a href="/add"><button>Add Feed</button></a>`)...)
 	head = append([]byte(`<div id="nav" style="position: fixed; top: 0; z-index: 100; background: white; width: 100%;">`), head...)
 
 	// get bitcoin price

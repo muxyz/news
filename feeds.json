@@ -1,8 +1,9 @@
 {
   "Crypto": "https://www.coindesk.com/arc/outboundfeeds/rss/",
-  "Dev":    "https://news.ycombinator.com/rss",
-  "UK":     "https://feeds.bbci.co.uk/news/rss.xml",
-  "World":  "https://www.aljazeera.com/xml/rss/all.xml",
+  "Dev": "https://news.ycombinator.com/rss",
+  "UK": "https://feeds.bbci.co.uk/news/rss.xml",
+  "World": "https://www.aljazeera.com/xml/rss/all.xml",
   "Market": "https://www.ft.com/news-feed?format=rss",
-  "Tech":   "https://techcrunch.com/feed/"
+  "Tech": "https://techcrunch.com/feed/",
+  "VC": "https://sifted.eu/feed/?post_type=article"
 }
