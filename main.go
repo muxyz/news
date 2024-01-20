@@ -137,7 +137,9 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 <h3>Add Feed</h3>
 <form id="add" action="/add" method="post">
 <input id="name" name="name" placeholder="feed name" required>
+<br><br>
 <input id="feed" name="feed" placeholder="feed url" required>
+<br><br>
 <button>Submit</button>
 <p><small>Feed will be parsed in 1 minute</small></p>
 </form>
