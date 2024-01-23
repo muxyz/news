@@ -13,35 +13,13 @@ import (
 	"sync"
 	"time"
 
+	"mu.dev"
+
 	"github.com/mmcdole/gofeed"
 )
 
-var Files string
-
 //go:embed feeds.json
 var f embed.FS
-
-func init() {
-	user, err := os.UserHomeDir()
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	home := filepath.Join(user, "mu")
-	if err := os.MkdirAll(home, 0700); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	files := filepath.Join(home, "cache")
-	if err := os.MkdirAll(files, 0700); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-	// set bin
-	Files = files
-}
 
 var feeds = map[string]string{}
 
@@ -119,7 +97,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 		_, ok := feeds[name]
 		if ok {
 			mutex.Unlock()
-			http.Error(w, "feed exists with name " + name, 500)
+			http.Error(w, "feed exists with name "+name, 500)
 			return
 		}
 
@@ -153,7 +131,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 func saveFeed() {
 	mutex.Lock()
 	defer mutex.Unlock()
-	file := filepath.Join(Files, "feeds.json")
+	file := filepath.Join(mu.Cache, "feeds.json")
 	feed, _ := json.Marshal(feeds)
 	os.WriteFile(file, feed, 0644)
 }
@@ -166,7 +144,7 @@ func saveHtml(head, data []byte) {
 	mutex.Lock()
 	news = []byte(html)
 	mutex.Unlock()
-	cache := filepath.Join(Files, "news.html")
+	cache := filepath.Join(mu.Cache, "news.html")
 	os.WriteFile(cache, news, 0644)
 }
 
@@ -187,7 +165,7 @@ func loadFeed() {
 	mutex.Unlock()
 
 	// load from cache
-	file := filepath.Join(Files, "feeds.json")
+	file := filepath.Join(mu.Cache, "feeds.json")
 
 	_, err := os.Stat(file)
 	if err == nil {
@@ -211,7 +189,7 @@ func loadFeed() {
 }
 
 func parseFeed() {
-	cache := filepath.Join(Files, "news.html")
+	cache := filepath.Join(mu.Cache, "news.html")
 
 	f, err := os.Stat(cache)
 	if err == nil && len(news) == 0 {
