@@ -23,27 +23,33 @@ var f embed.FS
 
 var feeds = map[string]string{}
 
-var info = map[string]func() string{
-	"Bitcoin": func() string {
-		rsp, err := http.Get("https://blockchain.info/ticker")
-		if err != nil {
-			return ""
-		}
-		b, _ := ioutil.ReadAll(rsp.Body)
-		defer rsp.Body.Close()
-		var res map[string]interface{}
-		json.Unmarshal(b, &res)
-		if res == nil {
-			return ""
-		}
-		p := res["USD"].(map[string]interface{})
-		bitcoin := p["last"].(float64)
-		return fmt.Sprintf("%v", bitcoin)
-	},
+// yes I know its hardcoded
+var key = os.Getenv("API_KEY")
+
+func getPrice(v ...string) map[string]string {
+	rsp, err := http.Get(fmt.Sprintf("https://min-api.cryptocompare.com/data/pricemulti?fsyms=%s&tsyms=USD&api_key=%s", strings.Join(v, ","), key))
+	if err != nil {
+		return nil
+	}
+	b, _ := ioutil.ReadAll(rsp.Body)
+	defer rsp.Body.Close()
+	var res map[string]interface{}
+	json.Unmarshal(b, &res)
+	if res == nil {
+		return nil
+	}
+	prices := map[string]string{}
+	for _, t := range v {
+		rsp := res[t].(map[string]interface{})
+		prices[t] = fmt.Sprintf("%v", rsp["USD"].(float64))
+	}
+	return prices
 }
 
+var tickers = []string{"BTC", "BNB", "ETH", "LTC"}
+
 var replace = []string{
-	"© 2023 TechCrunch. All rights reserved. For personal use only.",
+	"© 2024 TechCrunch. All rights reserved. For personal use only.",
 }
 
 var news = []byte{}
@@ -81,8 +87,9 @@ var template = `
   .head { margin-right: 10px; font-weight: bold; }
   a.head { display: block; margin-bottom: 20px; }
   .section { display: block; max-width: 600px; margin-right: 20px; vertical-align: top;}
-  .section img { width: 100%%; height: auto; }
+  .section img { display: none; }
   .section h3 { margin-bottom: 5px; }
+  .ticker { display: block; }
   @media only screen and (max-width: 600px) {
     .section { margin-right: 0px; }
     #nav {
@@ -100,6 +107,10 @@ var template = `
     a.head { 
       display: inline-block;
       margin-bottom: 0;
+    }
+    .ticker {
+      display: inline-block;
+      margin-right: 10px;
     }
   }
   </style>
@@ -281,10 +292,21 @@ func parseFeed() {
 	head = append([]byte(`<div id="nav" style="z-index: 100;">`), head...)
 
 	// get bitcoin price
-	b := info["Bitcoin"]()
-	head = append(head, []byte(`<div id="info">`)...)
-	head = append(head, []byte(`btc $`+b)...)
-	head = append(head, []byte(`</div>`)...)
+	prices := getPrice(tickers...)
+
+	if prices != nil {
+		btc := prices["BTC"]
+		eth := prices["ETH"]
+		bnb := prices["BNB"]
+		ltc := prices["LTC"]
+
+		head = append(head, []byte(`<div id="info">`)...)
+		head = append(head, []byte(`<span class="ticker">btc $`+btc+`</span>`)...)
+		head = append(head, []byte(`<span class="ticker">eth $`+eth+`</span>`)...)
+		head = append(head, []byte(`<span class="ticker">bnb $`+bnb+`</span>`)...)
+		head = append(head, []byte(`<span class="ticker">ltc $`+ltc+`</span>`)...)
+		head = append(head, []byte(`</div>`)...)
+	}
 
 	head = append(head, []byte(`</div>`)...)
 
