@@ -63,16 +63,44 @@ var template = `
 	  max-width: 1600px;
   }
   a { color: black; text-decoration: none; }
+  .anchor {
+    top: -75px;
+    margin-top: 75px;
+    visibility: hidden;
+    position: relative;
+    display: block;
+
+  }
   #info { margin-top: 5px;}
-  #nav { padding: 10px 0; overflow-x: scroll; white-space; nowrap; }
-  #news { padding-bottom: 100px; }
+  #nav { 
+    position: sticky; top: 20; background: white;
+    padding: 10px 0; overflow-x: scroll; white-space: nowrap; width: 20%%; 
+    margin-right: 50px; padding-top: 100px; vertical-align: top; display: inline-block;
+  }
+  #news { padding-bottom: 100px; display: block; width: 70%%; display: inline-block; }
   .head { margin-right: 10px; font-weight: bold; }
-  hr { margin: 50px 0; width: 50px; border: 5px solid;  }
+  a.head { display: block; margin-bottom: 20px; }
   .section { display: block; max-width: 600px; margin-right: 20px; vertical-align: top;}
   .section img { width: 100%%; height: auto; }
   .section h3 { margin-bottom: 5px; }
   @media only screen and (max-width: 600px) {
     .section { margin-right: 0px; }
+    #nav {
+      position: fixed;
+      padding: 20px 0 20px 0;
+      margin-right: 0;
+      width: 100%%;
+      display: block;
+      top: 0;
+    }
+    #news {
+      width: 100%%;
+      display: block;
+    }
+    a.head { 
+      display: inline-block;
+      margin-bottom: 0;
+    }
   }
   </style>
 </head>
@@ -226,7 +254,7 @@ func parseFeed() {
 		head = append(head, []byte(`<a href="#`+name+`" class="head">`+name+`</a>`)...)
 
 		data = append(data, []byte(`<div class=section>`)...)
-		data = append(data, []byte(`<hr id="`+name+`">`)...)
+		data = append(data, []byte(`<hr id="`+name+`" class="anchor">`)...)
 		data = append(data, []byte(`<h1>`+name+`</h1>`)...)
 
 		for i, item := range f.Items {
@@ -249,8 +277,8 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
-	head = append(head, []byte(`<a href="/add"><button>Add Feed</button></a>`)...)
-	head = append([]byte(`<div id="nav" style="position: fixed; top: 0; z-index: 100; background: white; width: 100%;">`), head...)
+	head = append(head, []byte(`<a href="/add" class="head"><button>Add Feed</button></a>`)...)
+	head = append([]byte(`<div id="nav" style="z-index: 100;">`), head...)
 
 	// get bitcoin price
 	b := info["Bitcoin"]()
