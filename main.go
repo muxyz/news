@@ -64,7 +64,7 @@ var template = `
   }
   a { color: black; text-decoration: none; }
   #info { margin-top: 5px;}
-  #nav { padding: 10px 0; }
+  #nav { padding: 10px 0; overflow-x: scroll; white-space; nowrap; }
   #news { padding-bottom: 100px; }
   .head { margin-right: 10px; font-weight: bold; }
   hr { margin: 50px 0; width: 50px; border: 5px solid;  }
