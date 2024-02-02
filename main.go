@@ -23,8 +23,18 @@ var f embed.FS
 
 var feeds = map[string]string{}
 
+var status = map[string]*Feed{}
+
 // yes I know its hardcoded
 var key = os.Getenv("API_KEY")
+
+type Feed struct {
+	Name     string
+	URL      string
+	Error    error
+	Attempts int
+	Backoff  time.Time
+}
 
 func getPrice(v ...string) map[string]string {
 	rsp, err := http.Get(fmt.Sprintf("https://min-api.cryptocompare.com/data/pricemulti?fsyms=%s&tsyms=USD&api_key=%s", strings.Join(v, ","), key))
@@ -193,6 +203,14 @@ func serveHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Write(news)
 }
 
+func statusHandler(w http.ResponseWriter, r *http.Request) {
+	mutex.RLock()
+	b, _ := json.Marshal(status)
+	mutex.RUnlock()
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(b)
+}
+
 func loadFeed() {
 	// load the feeds file
 	data, _ := f.ReadFile("feeds.json")
@@ -246,21 +264,81 @@ func parseFeed() {
 
 	data := []byte{}
 	head := []byte{}
+	urls := map[string]string{}
+	stats := map[string]Feed{}
 
 	var sorted []string
-	for name, _ := range feeds {
+
+	mutex.RLock()
+	for name, url := range feeds {
 		sorted = append(sorted, name)
+		urls[name] = url
+
+		if stat, ok := status[name]; ok {
+			stats[name] = *stat
+		}
 	}
+	mutex.RUnlock()
+
 	sort.Strings(sorted)
 
 	for _, name := range sorted {
-		feed := feeds[name]
+		feed := urls[name]
 
+		// check last attempt
+		stat, ok := stats[name]
+		if !ok {
+			stat = Feed{
+				Name: name,
+				URL:  feed,
+			}
+
+			mutex.Lock()
+			status[name] = &stat
+			mutex.Unlock()
+		}
+
+		// it's a reattempt, so we need to check what's going on
+		if stat.Attempts > 0 {
+			// there is still some time on the clock
+			if time.Until(stat.Backoff) > time.Duration(0) {
+				// skip this iteration
+				continue
+			}
+
+			// otherwise we've just hit our threshold
+			fmt.Println("Reattempting pull of", feed)
+		}
+
+		// parse the feed
 		f, err := p.ParseURL(feed)
 		if err != nil {
-			fmt.Println(err)
+			// up the attempts
+			stat.Attempts++
+			// set the error
+			stat.Error = err
+			// set the backoff
+			stat.Backoff = time.Now().Add(mu.Backoff(stat.Attempts))
+			// print the error
+			fmt.Printf("Error parsing %s: %v, attempt %d backoff until %v", feed, err, stat.Attempts, stat.Backoff)
+
+			mutex.Lock()
+			status[name] = &stat
+			mutex.Unlock()
+
+			// skip ahead
 			continue
 		}
+
+		mutex.Lock()
+		// successful pull
+		stat.Attempts = 0
+		stat.Backoff = time.Time{}
+		stat.Error = nil
+
+		// readd
+		status[name] = &stat
+		mutex.Unlock()
 
 		head = append(head, []byte(`<a href="#`+name+`" class="head">`+name+`</a>`)...)
 
@@ -315,7 +393,10 @@ func parseFeed() {
 
 	saveHtml(head, data)
 
-	time.Sleep(time.Minute)
+	// wait 10 minutes
+	time.Sleep(time.Minute * 5)
+
+	// go again
 	parseFeed()
 }
 
@@ -333,5 +414,6 @@ func main() {
 
 	http.HandleFunc("/", serveHTTP)
 	http.HandleFunc("/add", addHandler)
+	http.HandleFunc("/status", statusHandler)
 	http.ListenAndServe(":"+port, nil)
 }
