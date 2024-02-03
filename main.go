@@ -79,6 +79,7 @@ var template = `
 	  max-width: 1600px;
   }
   a { color: black; text-decoration: none; }
+  button:hover { cursor: pointer; }
   .anchor {
     top: -75px;
     margin-top: 75px;
@@ -161,7 +162,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := `
-<h3>Add Feed</h3>
+<h1>Add Feed</h1>
 <form id="add" action="/add" method="post">
 <input id="name" name="name" placeholder="feed name" required>
 <br><br>
@@ -366,7 +367,7 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
-	head = append(head, []byte(`<a href="/add" class="head"><button>Add Feed</button></a>`)...)
+	head = append(head, []byte(`<a href="/add" class="head"><button>Add</button></a>`)...)
 	head = append([]byte(`<div id="nav" style="z-index: 100;">`), head...)
 
 	// get bitcoin price
