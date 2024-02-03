@@ -357,7 +357,7 @@ func parseFeed() {
 			}
 
 			val := fmt.Sprintf(`
-<h3><a href="%s">%s</a></h2>
+<h3><a href="%s" target="_blank">%s</a></h2>
 <span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
@@ -400,6 +400,20 @@ func parseFeed() {
 	parseFeed()
 }
 
+func feedsHandler(w http.ResponseWriter, r *http.Request) {
+	mutex.RLock()
+	defer mutex.RUnlock()
+
+	data := `<h1>Feeds</h1>`
+
+	for name, feed := range feeds {
+		data += fmt.Sprintf(`<a href="%s">%s</a><br>`, feed, name)
+	}
+
+	html := fmt.Sprintf(template, data, "")
+	w.Write([]byte(html))
+}
+
 func main() {
 	port := "8080"
 
@@ -414,6 +428,7 @@ func main() {
 
 	http.HandleFunc("/", serveHTTP)
 	http.HandleFunc("/add", addHandler)
+	http.HandleFunc("/feeds", feedsHandler)
 	http.HandleFunc("/status", statusHandler)
 	http.ListenAndServe(":"+port, nil)
 }
