@@ -42,7 +42,7 @@ type Article struct {
 	URL         string
 	Published   string
 	Category    string
-	PostedAt time.Time
+	PostedAt    time.Time
 }
 
 func getPrice(v ...string) map[string]string {
@@ -391,7 +391,7 @@ func parseFeed() {
 				Description: item.Description,
 				URL:         item.Link,
 				Published:   item.Published,
-				PostedAt: *item.PublishedParsed,
+				PostedAt:    *item.PublishedParsed,
 				Category:    name,
 			})
 		}
@@ -430,7 +430,7 @@ func parseFeed() {
 	for _, h := range headlines {
 		val := fmt.Sprintf(`
 			<div class="headline"><a href="#%s" class="category">%s</a><h3><a href="%s" target="_blank">%s</a></h2><span class="description">%s</span></div>`,
-				h.Category, h.Category, h.URL, h.Title, h.Description)
+			h.Category, h.Category, h.URL, h.Title, h.Description)
 		headline = append(headline, []byte(val)...)
 	}
 
