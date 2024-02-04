@@ -88,6 +88,7 @@ var template = `
 	  max-width: 1600px;
   }
   a { color: black; text-decoration: none; }
+  button:hover { cursor: pointer; }
   .anchor {
     top: -75px;
     margin-top: 75px;
@@ -179,7 +180,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := `
-<h3>Add Feed</h3>
+<h1>Add Feed</h1>
 <form id="add" action="/add" method="post">
 <input id="name" name="name" placeholder="feed name" required>
 <br><br>
@@ -377,7 +378,7 @@ func parseFeed() {
 			}
 
 			val := fmt.Sprintf(`
-<h3><a href="%s" target="_blank">%s</a></h2>
+<h3><a href="%s" rel="noopener noreferrer" target="_blank">%s</a></h2>
 <span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
@@ -399,7 +400,7 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
-	head = append(head, []byte(`<a href="/add" class="head"><button>Add Feed</button></a>`)...)
+	head = append(head, []byte(`<a href="/add" class="head"><button>Add</button></a>`)...)
 	head = append([]byte(`<div id="nav" style="z-index: 100;">`), head...)
 
 	// get bitcoin price
@@ -429,8 +430,8 @@ func parseFeed() {
 
 	for _, h := range headlines {
 		val := fmt.Sprintf(`
-			<div class="headline"><a href="#%s" class="category">%s</a><h3><a href="%s" target="_blank">%s</a></h2><span class="description">%s</span></div>`,
-			h.Category, h.Category, h.URL, h.Title, h.Description)
+			<div class="headline"><a href="#%s" class="category">%s</a><h3><a href="%s" rel="noopener noreferrer" target="_blank">%s</a></h2><span class="description">%s</span></div>`,
+				h.Category, h.Category, h.URL, h.Title, h.Description)
 		headline = append(headline, []byte(val)...)
 	}
 
