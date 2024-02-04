@@ -36,6 +36,14 @@ type Feed struct {
 	Backoff  time.Time
 }
 
+type Article struct {
+	Title       string
+	Description string
+	URL         string
+	Published   string
+	Category    string
+}
+
 func getPrice(v ...string) map[string]string {
 	rsp, err := http.Get(fmt.Sprintf("https://min-api.cryptocompare.com/data/pricemulti?fsyms=%s&tsyms=USD&api_key=%s", strings.Join(v, ","), key))
 	if err != nil {
@@ -86,6 +94,15 @@ var template = `
     position: relative;
     display: block;
 
+  }
+  .category {
+    font-weight: bold;
+    font-size: small;
+    padding: 5px;
+    background: whitesmoke;
+  }
+  .headline {
+    margin-bottom: 25px;
   }
   #info { margin-top: 5px;}
   #nav { 
@@ -282,6 +299,8 @@ func parseFeed() {
 
 	sort.Strings(sorted)
 
+	var headlines []*Article
+
 	for _, name := range sorted {
 		feed := urls[name]
 
@@ -361,6 +380,18 @@ func parseFeed() {
 <span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
+
+			if i > 0 {
+				continue
+			}
+
+			headlines = append(headlines, &Article{
+				Title:       item.Title,
+				Description: item.Description,
+				URL:         item.Link,
+				Published:   item.Published,
+				Category:    name,
+			})
 		}
 
 		data = append(data, []byte(`</div>`)...)
@@ -388,6 +419,25 @@ func parseFeed() {
 
 	head = append(head, []byte(`</div>`)...)
 
+	// create the headlines
+	//sort.Slice(headlines, func(i, j int) bool {
+	//	return headlines[i].Published > headlines[j].Published
+	//})
+	headline := []byte(`<div class=section><hr id="headlines" class="anchor"><h1>Headlines</h1>`)
+
+	for _, h := range headlines {
+		val := fmt.Sprintf(`
+			<div class="headline"><a href="#%s" class="category">%s</a><h3><a href="%s" target="_blank">%s</a></h2><span class="description">%s</span></div>`,
+				h.Category, h.Category, h.URL, h.Title, h.Description)
+		headline = append(headline, []byte(val)...)
+	}
+
+	headline = append(headline, []byte(`</div>`)...)
+
+	// set the headline
+	data = append(headline, data...)
+
+	// create the news
 	data = append([]byte(`<div id="news">`), data...)
 	data = append(data, []byte(`</div>`)...)
 
