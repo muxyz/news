@@ -74,8 +74,10 @@ var replace = []string{
 var news = []byte{}
 var mutex sync.RWMutex
 var template = `
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta name="description" content="Read the news">
   <title>Mu News</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
@@ -378,7 +380,7 @@ func parseFeed() {
 			}
 
 			val := fmt.Sprintf(`
-<h3><a href="%s" rel="noopener noreferrer" target="_blank">%s</a></h2>
+<h3><a href="%s" rel="noopener noreferrer" target="_blank">%s</a></h3>
 <span class="description">%s</span>
 			`, item.Link, item.Title, item.Description)
 			data = append(data, []byte(val)...)
@@ -483,5 +485,9 @@ func main() {
 	http.HandleFunc("/add", addHandler)
 	http.HandleFunc("/feeds", feedsHandler)
 	http.HandleFunc("/status", statusHandler)
+	http.HandleFunc("/robots.txt", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`User-agent: *
+Allow: /`))
+	})
 	http.ListenAndServe(":"+port, nil)
 }
