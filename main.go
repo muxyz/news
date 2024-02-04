@@ -42,6 +42,7 @@ type Article struct {
 	URL         string
 	Published   string
 	Category    string
+	PostedAt time.Time
 }
 
 func getPrice(v ...string) map[string]string {
@@ -390,6 +391,7 @@ func parseFeed() {
 				Description: item.Description,
 				URL:         item.Link,
 				Published:   item.Published,
+				PostedAt: *item.PublishedParsed,
 				Category:    name,
 			})
 		}
@@ -420,9 +422,9 @@ func parseFeed() {
 	head = append(head, []byte(`</div>`)...)
 
 	// create the headlines
-	//sort.Slice(headlines, func(i, j int) bool {
-	//	return headlines[i].Published > headlines[j].Published
-	//})
+	sort.Slice(headlines, func(i, j int) bool {
+		return headlines[i].PostedAt.After(headlines[j].PostedAt)
+	})
 	headline := []byte(`<div class=section><hr id="headlines" class="anchor"><h1>Headlines</h1>`)
 
 	for _, h := range headlines {
