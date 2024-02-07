@@ -73,85 +73,6 @@ var replace = []string{
 
 var news = []byte{}
 var mutex sync.RWMutex
-var template = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta name="description" content="Read the news">
-  <title>Mu News</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-  body { 
-	  font-family: arial; 
-	  font-size: 14px; 
-	  color: darkslategray;
-	  margin: 0 auto;
-	  padding: 20px;
-	  max-width: 1600px;
-  }
-  a { color: black; text-decoration: none; }
-  button:hover { cursor: pointer; }
-  .anchor {
-    top: -75px;
-    margin-top: 75px;
-    visibility: hidden;
-    position: relative;
-    display: block;
-
-  }
-  .category {
-    font-weight: bold;
-    font-size: small;
-    padding: 5px;
-    background: whitesmoke;
-  }
-  .headline {
-    margin-bottom: 25px;
-  }
-  #info { margin-top: 5px;}
-  #nav { 
-    position: sticky; top: 20; background: white;
-    padding: 10px 0; overflow-x: scroll; white-space: nowrap; width: 20%%; 
-    margin-right: 50px; padding-top: 100px; vertical-align: top; display: inline-block;
-  }
-  #news { padding-bottom: 100px; display: block; width: 70%%; display: inline-block; }
-  .head { margin-right: 10px; font-weight: bold; }
-  a.head { display: block; margin-bottom: 20px; }
-  .section { display: block; max-width: 600px; margin-right: 20px; vertical-align: top;}
-  .section img { display: none; }
-  .section h3 { margin-bottom: 5px; }
-  .ticker { display: block; }
-  @media only screen and (max-width: 600px) {
-    .section { margin-right: 0px; }
-    #nav {
-      position: fixed;
-      padding: 20px 0 20px 0;
-      margin-right: 0;
-      width: 100%%;
-      display: block;
-      top: 0;
-    }
-    #news {
-      width: 100%%;
-      display: block;
-    }
-    a.head { 
-      display: inline-block;
-      margin-bottom: 0;
-    }
-    .ticker {
-      display: inline-block;
-      margin-right: 10px;
-    }
-  }
-  </style>
-</head>
-<body>
-%s
-%s
-</body>
-</html>
-`
 
 func addHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "POST" {
@@ -193,7 +114,7 @@ func addHandler(w http.ResponseWriter, r *http.Request) {
 </form>
 `
 
-	html := fmt.Sprintf(template, form, "")
+	html := mu.Template("Add Feed", "Add a news feed", "", form)
 
 	w.Write([]byte(html))
 }
@@ -210,7 +131,7 @@ func saveHtml(head, data []byte) {
 	if len(data) == 0 {
 		return
 	}
-	html := fmt.Sprintf(template, string(head), string(data))
+	html := mu.Template("News", "Read the news", string(head), string(data))
 	mutex.Lock()
 	news = []byte(html)
 	mutex.Unlock()
@@ -402,8 +323,7 @@ func parseFeed() {
 		data = append(data, []byte(`</div>`)...)
 	}
 
-	head = append(head, []byte(`<a href="/add" class="head"><button>Add</button></a>`)...)
-	head = append([]byte(`<div id="nav" style="z-index: 100;">`), head...)
+	// head = append(head, []byte(`<a href="/add" class="head"><button>Add</button></a>`)...)
 
 	// get bitcoin price
 	prices := getPrice(tickers...)
@@ -421,8 +341,6 @@ func parseFeed() {
 		head = append(head, []byte(`<span class="ticker">ltc $`+ltc+`</span>`)...)
 		head = append(head, []byte(`</div>`)...)
 	}
-
-	head = append(head, []byte(`</div>`)...)
 
 	// create the headlines
 	sort.Slice(headlines, func(i, j int) bool {
@@ -442,10 +360,7 @@ func parseFeed() {
 	// set the headline
 	data = append(headline, data...)
 
-	// create the news
-	data = append([]byte(`<div id="news">`), data...)
-	data = append(data, []byte(`</div>`)...)
-
+	// save it
 	saveHtml(head, data)
 
 	// wait 10 minutes
@@ -465,7 +380,7 @@ func feedsHandler(w http.ResponseWriter, r *http.Request) {
 		data += fmt.Sprintf(`<a href="%s">%s</a><br>`, feed, name)
 	}
 
-	html := fmt.Sprintf(template, data, "")
+	html := mu.Template("Feeds", "News RSS feeds", "", data)
 	w.Write([]byte(html))
 }
 
