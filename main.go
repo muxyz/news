@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strings"
 	"sync"
@@ -67,8 +68,13 @@ func getPrice(v ...string) map[string]string {
 
 var tickers = []string{"BTC", "BNB", "ETH", "LTC"}
 
-var replace = []string{
-	"© 2024 TechCrunch. All rights reserved. For personal use only.",
+var replace = []func(string) string{
+	func(v string) string {
+		return strings.Replace(v, "© 2024 TechCrunch. All rights reserved. For personal use only.", "", -1)
+	},
+	func(v string) string {
+		return regexp.MustCompile(`<img .*>`).ReplaceAllString(v, "")
+	},
 }
 
 var news = []byte{}
@@ -296,8 +302,8 @@ func parseFeed() {
 				break
 			}
 
-			for _, r := range replace {
-				item.Description = strings.Replace(item.Description, r, "", -1)
+			for _, fn := range replace {
+				item.Description = fn(item.Description)
 			}
 
 			val := fmt.Sprintf(`
@@ -351,7 +357,7 @@ func parseFeed() {
 	for _, h := range headlines {
 		val := fmt.Sprintf(`
 			<div class="headline"><a href="#%s" class="category">%s</a><h3><a href="%s" rel="noopener noreferrer" target="_blank">%s</a></h3><span class="description">%s</span></div>`,
-				h.Category, h.Category, h.URL, h.Title, h.Description)
+			h.Category, h.Category, h.URL, h.Title, h.Description)
 		headline = append(headline, []byte(val)...)
 	}
 
