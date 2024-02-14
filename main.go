@@ -66,7 +66,7 @@ func getPrice(v ...string) map[string]string {
 	return prices
 }
 
-var tickers = []string{"BTC", "BNB", "ETH", "LTC"}
+var tickers = []string{"BTC", "BNB", "ETH", "SOL"}
 
 var replace = []func(string) string{
 	func(v string) string {
@@ -338,13 +338,13 @@ func parseFeed() {
 		btc := prices["BTC"]
 		eth := prices["ETH"]
 		bnb := prices["BNB"]
-		ltc := prices["LTC"]
+		sol := prices["SOL"]
 
 		head = append(head, []byte(`<div id="info">`)...)
 		head = append(head, []byte(`<span class="ticker">btc $`+btc+`</span>`)...)
 		head = append(head, []byte(`<span class="ticker">eth $`+eth+`</span>`)...)
 		head = append(head, []byte(`<span class="ticker">bnb $`+bnb+`</span>`)...)
-		head = append(head, []byte(`<span class="ticker">ltc $`+ltc+`</span>`)...)
+		head = append(head, []byte(`<span class="ticker">sol $`+sol+`</span>`)...)
 		head = append(head, []byte(`</div>`)...)
 	}
 
