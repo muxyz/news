@@ -343,7 +343,7 @@ func parseFeed() {
 		sol := prices["SOL"]
 
 		var info []byte
-		info = append(info, []byte(`<div id="info">`)...)
+		info = append(info, []byte(`<div id="info"><h4>Markets</h4>`)...)
 		info = append(info, []byte(`<span class="ticker">btc $`+btc+`</span>`)...)
 		info = append(info, []byte(`<span class="ticker">eth $`+eth+`</span>`)...)
 		info = append(info, []byte(`<span class="ticker">bnb $`+bnb+`</span>`)...)
