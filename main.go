@@ -331,7 +331,9 @@ func parseFeed() {
 
 	// head = append(head, []byte(`<a href="/add" class="head"><button>Add</button></a>`)...)
 
-	// get bitcoin price
+	headline := []byte(`<div class=section><hr id="headlines" class="anchor">`)
+
+	// get crypto prices
 	prices := getPrice(tickers...)
 
 	if prices != nil {
@@ -340,19 +342,22 @@ func parseFeed() {
 		bnb := prices["BNB"]
 		sol := prices["SOL"]
 
-		head = append(head, []byte(`<div id="info">`)...)
-		head = append(head, []byte(`<span class="ticker">btc $`+btc+`</span>`)...)
-		head = append(head, []byte(`<span class="ticker">eth $`+eth+`</span>`)...)
-		head = append(head, []byte(`<span class="ticker">bnb $`+bnb+`</span>`)...)
-		head = append(head, []byte(`<span class="ticker">sol $`+sol+`</span>`)...)
-		head = append(head, []byte(`</div>`)...)
+		var info []byte
+		info = append(info, []byte(`<div id="info">`)...)
+		info = append(info, []byte(`<span class="ticker">btc $`+btc+`</span>`)...)
+		info = append(info, []byte(`<span class="ticker">eth $`+eth+`</span>`)...)
+		info = append(info, []byte(`<span class="ticker">bnb $`+bnb+`</span>`)...)
+		info = append(info, []byte(`<span class="ticker">sol $`+sol+`</span>`)...)
+		info = append(info, []byte(`</div>`)...)
+		headline = append(headline, info...)
 	}
+
+	headline = append(headline, []byte(`<h1>Headlines</h1>`)...)
 
 	// create the headlines
 	sort.Slice(headlines, func(i, j int) bool {
 		return headlines[i].PostedAt.After(headlines[j].PostedAt)
 	})
-	headline := []byte(`<div class=section><hr id="headlines" class="anchor"><h1>Headlines</h1>`)
 
 	for _, h := range headlines {
 		val := fmt.Sprintf(`
@@ -365,6 +370,7 @@ func parseFeed() {
 
 	// set the headline
 	data = append(headline, data...)
+
 
 	// save it
 	saveHtml(head, data)

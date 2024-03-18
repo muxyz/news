@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/mmcdole/gofeed v1.2.1
-	mu.dev v0.0.0-20240207211004-c42a12a4841e
+	mu.dev v0.0.0-20240318114118-d1ac0f9b90e5
 )
 
 require (
